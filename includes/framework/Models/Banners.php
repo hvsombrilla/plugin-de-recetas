@@ -1,0 +1,367 @@
+<?php
+namespace SombrillaWP\Models;
+
+use SombrillaWP\DB\Query;
+use SombrillaWP\Exceptions\ModelException;
+use SombrillaWP\Models\Meta\WPPostMeta;
+
+class Banners extends Model
+{
+    protected $idColumn = 'pid';
+    protected $resource = 'banners';
+    protected $postType = 'banners';
+
+    protected $builtin = [
+        'pid',
+        'priority',
+        'views',
+        'clics',
+        'link',
+        'type',
+        'btext',
+        'bgcolor',
+        'image',
+        'start',
+        'end',
+        'btitle',
+        'description'
+    ];
+
+    protected $guard = [
+        'post_type',
+        'id',
+    ];
+
+    protected $table = 'everquest_banners';
+
+    public function __construct($id = NULL)
+    {
+        global $post;
+        $this->init();
+
+        $this->query = $this->initQuery(new Query());
+        $table       = $this->getTable();
+
+        $this->query->table($table);
+
+        $this->fillable = apply_filters('tr_model_fillable', $this->fillable, $this);
+        $this->guard    = apply_filters('tr_model_guard', $this->guard, $this);
+        $this->format   = apply_filters('tr_model_format', $this->format, $this);
+        do_action('tr_model', $this);
+
+        if (empty($id)) {
+            if (isset($post->ID)) {
+                $id = $post->ID;
+            }
+
+            if (isset($_POST['post_ID'])) {
+                $id = $_POST['post_ID'];
+            }
+        }
+
+
+        if (!empty($id)) {
+            $this->findById($id);
+        }
+
+    }
+    /**
+     * Posts Meta Fields
+     *
+     * @param bool $withPrivate
+     *
+     * @return null|\TypeRocket\Models\Model
+     */
+    public function meta($withPrivate = false)
+    {
+        $meta = $this->hasMany(WPPostMeta::class, 'post_id');
+
+        if (!$withPrivate) {
+            $meta->where('meta_key', 'NOT LIKE', '\_%');
+        }
+
+        return $meta;
+    }
+
+    /**
+     * Author
+     *
+     * @return $this|null
+     */
+    public function author()
+    {
+        //return $this->belongsTo( get_current_user(), 'post_author' );
+        return $this;
+    }
+
+    /**
+     * Published
+     *
+     * @return $this
+     */
+    public function published()
+    {
+        return $this->where('post_status', 'publish');
+    }
+
+    /**
+     * Status
+     *
+     * @param string $type
+     *
+     * @return $this
+     */
+    public function status($type)
+    {
+        return $this->where('post_status', $type);
+    }
+
+    /**
+     * Get Post Type
+     *
+     * @return string
+     */
+    public function getPostType()
+    {
+        return $this->postType;
+    }
+
+    /**
+     * Return table name in constructor
+     *
+     * @param \wpdb $wpdb
+     *
+     * @return string
+     */
+    public function initTable($wpdb)
+    {
+        return $wpdb->prefix . 'posts';
+    }
+
+    /**
+     * Init Post Type
+     *
+     * @param Query $query
+     *
+     * @return Query
+     */
+    protected function initQuery(Query $query)
+    {
+        return $query;
+    }
+
+    /**
+     * Find post by ID
+     *
+     * @param $id
+     *
+     * @return $this
+     */
+    public function findById($id)
+    {
+
+        $results = $this->query->where($this->idColumn, '=', $id)->first();
+        $results = (array) $results;
+        $this->castProperties($results);
+        return $results;
+    }
+
+    /**
+     * Create post from TypeRocket fields
+     *
+     * Set the post type property on extended model so they
+     * are saved to the correct type. See the PagesModel
+     * as example.
+     *
+     * @param array|\TypeRocket\Http\Fields $fields
+     *
+     * @return $this
+     * @throws \TypeRocket\Exceptions\ModelException
+     */
+    public function create($fields = [])
+    {
+        $fields  = $this->provisionFields($fields);
+        $builtin = $this->getFilteredBuiltinFields($fields);
+
+        if (!empty($builtin)) {
+            $builtin = $this->slashBuiltinFields($builtin);
+            remove_action('save_post', 'TypeRocket\Http\Responders\Hook::posts');
+
+            if (!empty($this->postType)) {
+                $builtin['post_type'] = $this->postType;
+            }
+
+            if (empty($builtin['post_title']) || empty($builtin['post_content'])) {
+                $error = 'WPPost not created: post_title and post_content are required';
+                throw new ModelException($error);
+            }
+
+            $post = wp_insert_post($builtin);
+            add_action('save_post', 'TypeRocket\Http\Responders\Hook::posts');
+
+            if ($post instanceof \WP_Error || $post === 0) {
+                $error = 'WPPost not created: An error accrued during wp_insert_post.';
+                throw new ModelException($error);
+            } else {
+                $this->findById($post);
+            }
+        }
+
+        $this->saveMeta($fields);
+
+        return $this;
+    }
+
+    /**
+     * Update post from TypeRocket fields
+     *
+     * @param array|\TypeRocket\Http\Fields $fields
+     *
+     * @return $this
+     * @throws \TypeRocket\Exceptions\ModelException
+     */
+    public function update($data = [])
+    {
+        $dataToUpdate = [];
+
+        foreach ($data as $key => $value) {
+
+            if (in_array($key, $this->builtin)) {
+
+                if (in_array($key, ['start', 'end'])) {
+                    $dataToUpdate[$key] = strtotime($value);
+                }else{
+                    $dataToUpdate[$key] = $value;
+                }
+               
+            }
+        }
+
+        global $wpdb;
+
+        $id = $this->getID();
+
+        if (!empty($id)) {
+            $wpdb->update($wpdb->prefix . $this->table, $dataToUpdate, [$this->idColumn => $id]);
+        }else{
+
+            $dataToUpdate['pid'] = $_POST['post_ID'];
+            $wpdb->insert($wpdb->prefix . $this->table, $dataToUpdate);
+        }
+       
+
+        return $this;
+    }
+
+    /**
+     * Save post meta fields from TypeRocket fields
+     *
+     * @param array|\ArrayObject $fields
+     *
+     * @return $this
+     */
+    private function saveMeta($fields)
+    {
+
+        $fields = $this->getFilteredMetaFields($fields);
+        $id     = $this->getID();
+        if (!empty($fields) && !empty($id)):
+            if ($parent_id = wp_is_post_revision($id)) {
+                $id = $parent_id;
+            }
+
+            foreach ($fields as $key => $value):
+                if (is_string($value)) {
+                    $value = trim($value);
+                }
+
+                $current_value = get_post_meta($id, $key, true);
+
+                if ((isset($value) && $value !== "") && $value !== $current_value):
+                    update_post_meta($id, $key, wp_slash($value));
+                elseif (!isset($value) || $value === "" && (isset($current_value) || $current_value === "")):
+                    delete_post_meta($id, $key);
+                endif;
+
+            endforeach;
+        endif;
+
+        return $this;
+    }
+
+    /**
+     * Get base field value
+     *
+     * Some fields need to be saved as serialized arrays. Getting
+     * the field by the base value is used by Fields to populate
+     * their values.
+     *
+     * @param $field_name
+     *
+     * @return null
+     */
+    public function getBaseFieldValue($field_name)
+    {
+        global $wpdb;
+        $id = $this->getID();
+
+        if (in_array($field_name, $this->builtin)) {
+            $data = (isset( $this->properties[$field_name] )) ? $this->properties[$field_name] : null;
+
+        } else {
+            $data = get_post_meta($id, $field_name, true);
+        }
+
+        return $this->getValueOrNull($data);
+    }
+
+    private function getDotKeys($str)
+    {
+        $matches = explode('.', $str);
+
+        return $matches;
+    }
+
+    /**
+     * Get value from database from typeRocket bracket syntax
+     *
+     * @param $field
+     *
+     * @return array|mixed|null|string
+     */
+    public function getFieldValue($field)
+    {
+
+        $field = $field->getDots();
+
+        // if ($this->getID() == null && ! $this->old && empty($this->dataOverride) ) {
+        //     return null;
+        // }
+
+        return $this->getBaseFieldValue($field);
+
+    }
+
+    public function getBuiltinFields()
+    {
+        return $this->builtin;
+    }
+
+    public function slashBuiltinFields($builtin)
+    {
+
+        $fields = [
+            'post_content',
+            'post_excerpt',
+            'post_title',
+        ];
+
+        foreach ($fields as $field) {
+            if (!empty($builtin[$field])) {
+                $builtin[$field] = wp_slash($builtin[$field]);
+            }
+        }
+
+        return $builtin;
+    }
+}

@@ -1,0 +1,128 @@
+	img.img-flag {
+    height: 50px;
+}
+
+i.fa.fa-trash.icon-borrar {
+    position: absolute;
+    right: 10px;
+    top: 27px;
+        cursor: pointer;
+}
+.receta-wrap label {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    color: #00776d;
+    margin-top: 15px;
+}
+span.search-titulo {
+    font-weight: bold;
+    font-size: 20px;
+    padding-left: 10px;
+}
+span.receta-dosis {
+    display: block;
+    font-size: 14px;
+    font-weight: 200;
+}
+
+li.list-group-item {
+     padding: 13px 0;
+    font-size: 16px;
+    font-weight: bold;
+    color: black;
+    background: none;
+    border: none;
+}
+.barra-baja:after{
+    content: "_";
+    font-size: 0;
+    display: block;
+    margin: 10px 0;
+    width: 58px;
+    border-bottom: solid #00776d 3px;
+}
+.green-box{
+    background: #cbe3e1;
+    padding: 30px;
+    border-radius: 10px;
+
+}
+.green-box h3 {
+    color: #00776d;
+    font-weight: 700;
+}
+.select2-container .select2-selection--single{
+	height: auto !important;
+}
+
+.rd-tag{
+	cursor: pointer;
+}
+
+
+h2.product-title {
+    font-size: 12px;
+    font-weight: bold;
+    padding: 5px;
+    height: 31px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+div#products-catalog .btn {
+    font-size: 12px;
+    text-transform: uppercase;
+   
+}
+/*
+div#products-catalog {
+    white-space: nowrap;
+    display: block;
+    overflow: scroll;
+    overflow-y: hidden;
+}
+
+div#products-catalog > div {
+    display: inline-block;
+}*/
+
+
+div#products-catalog .carousel-indicators {
+    position: relative;
+
+}
+
+
+div#products-catalog .carousel-indicators li {
+    background: #00665e;
+    height: 2px;
+}
+
+ul#menu-backoffice li:after {
+    content: "_";
+    font-size: 0;
+    display: block;
+    margin: -10px 0;
+    width: 58px;
+    border-bottom: solid #00776d 3px;
+}
+
+ul.list-group.receta-ul.protocolos li {
+    padding:  5px 0;
+}
+
+h5 {
+    color: #00776d;
+}
+
+.row.add-otras-presc {
+    margin: 30px 0;
+}
+
+span#addOtherPresc {
+    font-size: 40px;
+    color: #00776d;
+    margin-top: 6px;
+    display: block;
+}
