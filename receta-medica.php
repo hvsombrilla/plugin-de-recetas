@@ -4,7 +4,7 @@ Plugin Name: Receta Medica
 Plugin URI: http://hvsombrilla.com
 Description: Plugin hecho a la medida para registro de recetas.
 Author: HV Sombrilla
-Version: 1.0
+Version: 1.2
 Author URI: http://hvsombrilla.com/
 */
 

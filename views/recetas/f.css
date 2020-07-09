@@ -1,0 +1,14 @@
+option {
+    background-color: #d8d4dc;
+}
+.modal-content{
+    background-color: #d8d4dc;
+    -webkit-border-radius: 20px !important;
+    -moz-border-radius: 20px !important;
+    border-radius: 20px !important;
+}
+#userDropdown ~ span{
+    display: none;
+}
+
+.nodisplay{display: none !important; }

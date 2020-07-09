@@ -19,7 +19,7 @@ function newIndicationForm( $atts, $content = null ) {
 }
 
 
-add_shortcode( 'nueva-receta', function(){
+add_shortcode( 'new-rec', function(){
 	if (empty($_GET['receta'])) {
 		return recetaMedicaShowView('recetas/new');
 	} else {
@@ -30,16 +30,3 @@ add_shortcode( 'nueva-receta', function(){
 	
 } );
 
-add_shortcode( 'editar-perfil', function(){
-	return recetaMedicaShowView('perfil/editar');
-});
-
-add_shortcode( 'historial-recetas', function(){
-	if (empty($_GET['receta'])) {
-		return recetaMedicaShowView('recetas/historial');
-	} else {
-		return recetaMedicaShowView('recetas/view');
-	}
-	
-	
-});
